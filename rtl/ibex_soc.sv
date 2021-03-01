@@ -19,17 +19,22 @@ module ibex_soc
 
     logic clk_raw, pll_lock, pll_fb;
     PLLE2_BASE #(
-        .CLKIN1_PERIOD  ( 10.0 ),
-        .CLKFBOUT_MULT  ( 10   ),
-        .CLKOUT0_DIVIDE ( 25   )
+        .CLKIN1_PERIOD  ( 10.0        ),
+        .CLKFBOUT_MULT  ( 10          ),
+        .CLKOUT0_DIVIDE ( 20          )
     ) pll_inst (
-        .CLKIN1   ( sys_clk_i   ),
-        .CLKOUT0  ( clk_raw     ),
-        .LOCKED   ( pll_lock    ),
-        .PWRDWN   ( 1'b0        ),
-        .RST      ( ~sys_rst_ni ),
-        .CLKFBOUT ( pll_fb      ),
-        .CLKFBIN  ( pll_fb      )
+        .CLKIN1         ( sys_clk_i   ),
+        .CLKOUT0        ( clk_raw     ),
+        .CLKOUT1        (             ),
+        .CLKOUT2        (             ),
+        .CLKOUT3        (             ),
+        .CLKOUT4        (             ),
+        .CLKOUT5        (             ),
+        .LOCKED         ( pll_lock    ),
+        .PWRDWN         ( 1'b0        ),
+        .RST            ( ~sys_rst_ni ),
+        .CLKFBOUT       ( pll_fb      ),
+        .CLKFBIN        ( pll_fb      )
     );
     logic clk;
     BUFG clkbuf (

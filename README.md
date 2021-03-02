@@ -12,7 +12,12 @@ as a submodule. After cloning you need to initialize the submodule:
    [GitHub page](https://github.com/riscv/riscv-gnu-toolchain) and add the
    `bin/` directory to your path.
 
-2. Compile your program by using the Makefile in the `sw/` subdirectory and
+2. Install [SRecord](http://srecord.sourceforge.net/), which is currently
+   required to convert `*.bin` files to `*.vmem` files due to
+   [a bug in GNU binutils
+   ](https://github.com/riscv/riscv-tools/issues/168#issuecomment-554973539).
+
+3. Compile your program by using the Makefile in the `sw/` subdirectory and
    specifying your program name with the variable `PROG` and object files with
    `OBJ` (object files may have `*.c` or `*.S` source files). Example:
 

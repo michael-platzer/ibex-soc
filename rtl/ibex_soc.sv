@@ -118,17 +118,10 @@ module ibex_soc
     assign instr_gnt = instr_req & ~data_req;
     always_comb begin
         mem_req   = data_req | instr_req;
+        mem_addr  = data_req ? data_addr : instr_addr;
+        mem_we    = data_req & data_we;
         mem_be    = data_be;
         mem_wdata = data_wdata;
-        mem_addr  = '0;
-        mem_we    = 1'b0;
-        if (data_req) begin
-            mem_addr  = data_addr;
-            mem_we    = data_we;
-        end else if (instr_req) begin
-            mem_addr  = instr_addr;
-            mem_we    = 1'b0;
-        end
     end
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -162,16 +155,16 @@ module ibex_soc
     );
 
     hwreg_iface hwregs (
-        .clk_i      ( clk                                      ),
-        .rst_ni     ( rst_n                                    ),
-        .req_i      ( data_req & (mem_addr[31:16] == 16'hFF00) ),
-        .we_i       ( mem_we                                   ),
-        .addr_i     ( mem_addr[15:0]                           ),
-        .wdata_i    ( mem_wdata                                ),
-        .rvalid_o   ( hwreg_rvalid                             ),
-        .rdata_o    ( hwreg_rdata                              ),
-        .rx_i       ( uart_rx_i                                ),
-        .tx_o       ( uart_tx_o                                )
+        .clk_i      ( clk                                       ),
+        .rst_ni     ( rst_n                                     ),
+        .req_i      ( data_req & (data_addr[31:16] == 16'hFF00) ),
+        .we_i       ( data_we                                   ),
+        .addr_i     ( data_addr[15:0]                           ),
+        .wdata_i    ( data_wdata                                ),
+        .rvalid_o   ( hwreg_rvalid                              ),
+        .rdata_o    ( hwreg_rdata                               ),
+        .rx_i       ( uart_rx_i                                 ),
+        .tx_o       ( uart_tx_o                                 )
     );
 
 endmodule

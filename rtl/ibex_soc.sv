@@ -21,7 +21,7 @@ module ibex_soc
     PLLE2_BASE #(
         .CLKIN1_PERIOD  ( 10.0        ),
         .CLKFBOUT_MULT  ( 10          ),
-        .CLKOUT0_DIVIDE ( 20          )
+        .CLKOUT0_DIVIDE ( 25          )
     ) pll_inst (
         .CLKIN1         ( sys_clk_i   ),
         .CLKOUT0        ( clk_raw     ),

@@ -75,6 +75,9 @@ module ibex_soc
     logic        hwreg_rvalid;
     logic [31:0] hwreg_rdata;
 
+    // Interrupts
+    logic irq_timer;
+
     ibex_core #(
         .DmHaltAddr             ( 32'h00000000       ),
         .DmExceptionAddr        ( 32'h00000000       )
@@ -103,7 +106,7 @@ module ibex_soc
         .data_err_i             ( data_err           ),
 
         .irq_software_i         ( 1'b0               ),
-        .irq_timer_i            ( 1'b0               ),
+        .irq_timer_i            ( irq_timer          ),
         .irq_external_i         ( 1'b0               ),
         .irq_fast_i             ( 15'b0              ),
         .irq_nm_i               ( 1'b0               ),
@@ -155,23 +158,26 @@ module ibex_soc
     );
 
     hwreg_iface hwregs (
-        .clk_i      ( clk                                       ),
-        .rst_ni     ( rst_n                                     ),
-        .req_i      ( data_req & (data_addr[31:16] == 16'hFF00) ),
-        .we_i       ( data_we                                   ),
-        .addr_i     ( data_addr[15:0]                           ),
-        .wdata_i    ( data_wdata                                ),
-        .rvalid_o   ( hwreg_rvalid                              ),
-        .rdata_o    ( hwreg_rdata                               ),
-        .rx_i       ( uart_rx_i                                 ),
-        .tx_o       ( uart_tx_o                                 )
+        .clk_i       ( clk                                       ),
+        .rst_ni      ( rst_n                                     ),
+        .req_i       ( data_req & (data_addr[31:16] == 16'hFF00) ),
+        .we_i        ( data_we                                   ),
+        .addr_i      ( data_addr[15:0]                           ),
+        .wdata_i     ( data_wdata                                ),
+        .rvalid_o    ( hwreg_rvalid                              ),
+        .rdata_o     ( hwreg_rdata                               ),
+        .irq_timer_o ( irq_timer                                 ),
+        .rx_i        ( uart_rx_i                                 ),
+        .tx_o        ( uart_tx_o                                 )
     );
 
 endmodule
 
 
 
-module hwreg_iface (
+module hwreg_iface #(
+        parameter int unsigned TIMER_PERIOD = 400000 // period in clk cycles
+    )(
         input           clk_i,
         input           rst_ni,
         input           req_i,
@@ -181,12 +187,16 @@ module hwreg_iface (
         output          rvalid_o,
         output [31:0]   rdata_o,
 
+        output          irq_timer_o,
+
         input           rx_i,
         output          tx_o
     );
 
     localparam logic [7:0] ADDR_UART_DATA   = 8'h00;
     localparam logic [7:0] ADDR_UART_STATUS = 8'h01;
+
+    localparam logic [7:0] ADDR_INTERRUPTS  = 8'h80;
 
     logic       uart_req;
     logic       uart_wbusy;
@@ -208,6 +218,28 @@ module hwreg_iface (
         .tx_o           ( tx_o              )
     );
 
+
+    // Periodic timer interrupt
+    logic [$clog2(TIMER_PERIOD)-1:0] timer_cnt;
+    logic                            timer_irq;
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+            timer_cnt <= '0;
+            timer_irq <= '0;
+        end else begin
+            if (timer_cnt != (TIMER_PERIOD - 1)) begin
+                timer_cnt <= timer_cnt + 1;
+            end else begin
+                timer_cnt <= '0;
+                timer_irq <= 1'b1; // signal timer interrupt upon counter reset
+            end
+            if (req_i & we_i & (addr_i[9:2] == ADDR_INTERRUPTS) & wdata_i[0]) begin
+                timer_irq <= 1'b0; // clear from software
+            end
+        end
+    end
+
+
     logic [31:0] rdata;
     logic        rvalid;
 
@@ -216,6 +248,8 @@ module hwreg_iface (
             ADDR_UART_DATA:   rdata <= uart_rvalid ? uart_rdata : 32'hFFFFFFFF;
             ADDR_UART_STATUS: rdata <= { 30'h0, uart_rvalid, uart_wbusy };
 
+            ADDR_INTERRUPTS:  rdata <= {31'b0, timer_irq};
+
             default:          rdata <= 0;
         endcase
         rvalid <= req_i;
@@ -223,6 +257,8 @@ module hwreg_iface (
 
     assign rdata_o  = rdata;
     assign rvalid_o = rvalid;
+
+    assign irq_timer_o = timer_irq;
 endmodule
 
 

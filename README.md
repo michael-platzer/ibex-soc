@@ -43,7 +43,7 @@ This program can be compiled as follows:
 
 1. Install Vivado and add the `bin/` directory to your path.
 
-1. Issue the command `make` in the top-level directory of this repository. This
+2. Issue the command `make` in the top-level directory of this repository. This
    generates a Vivado project in a temporary directory (alternatively you can
    specify a directory with `PROJ_DIR`). A boot RAM file can be used to
    initialize the RAM with `RAM_FILE`. Example:
@@ -61,3 +61,52 @@ assumption that `/dev/ttyUSB0` is the device file for the connection):
 
     stty -F /dev/ttyUSB0 115200
     cat /dev/ttyUSB0
+
+
+## Interrupts
+
+The SoC generates periodic timer interrupts with a frequency of 100 Hz. Define
+a global function called `exception_handler()` to handle interrupts. The
+function should be defined as follows:
+
+```
+void exception_handler(long mcause, void *mepc, void *mtval, void *frame_ptr)
+```
+
+The parameter `mcause` indicates the cause of the interrupt or exception. Its
+value corresponds to the content of the `mcause` CSR (see Sect. 3.1.16 of the
+[RISC-V Privileged Spec.](https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf).
+In particular, the value is negative in case of an interrupt and positive or 0
+in case of an exception. Likewise, the parameters `mepc` and `mtval` hold the
+corresponding CSR register values and `frame_ptr` is the value of the stack
+pointer when the interrupt occured.
+
+Note that the handler must clear the interrupt, otherwise it triggers again
+right away. The timer interrupt can be cleared by writing 1 to the memory-
+mapped register at address `0xFF000200`.
+
+The following program prints a message whenever a timer interrupt occurs:
+
+```
+#include "sw/lib/uart.h"
+
+int main(int argc, char *argv[]) {
+    // enable timer interrupt
+    asm volatile("csrw mie,     %0" :: "r"(0x00000080));
+    asm volatile("csrs mstatus, %0" :: "r"(0x00000008));
+
+    while (1)
+        ;
+
+    return 0;
+}
+
+void exception_handler(long mcause, void *mepc, void *mtval, void *frame_ptr)
+{
+    // clear interrupt flag
+    volatile long *const interrupt_flags = (volatile long *const)0xFF000200;
+    *interrupt_flags = 1;
+
+    uart_puts("Hello world!\n");
+}
+```

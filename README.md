@@ -75,15 +75,15 @@ void exception_handler(long mcause, void *mepc, void *mtval, void *frame_ptr)
 
 The parameter `mcause` indicates the cause of the interrupt or exception. Its
 value corresponds to the content of the `mcause` CSR (see Sect. 3.1.16 of the
-[RISC-V Privileged Spec.](https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf).
+[RISC-V Privileged Spec.](https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMFDQC-and-Priv-v1.11/riscv-privileged-20190608.pdf)).
 In particular, the value is negative in case of an interrupt and positive or 0
 in case of an exception. Likewise, the parameters `mepc` and `mtval` hold the
 corresponding CSR register values and `frame_ptr` is the value of the stack
 pointer when the interrupt occured.
 
 Note that the handler must clear the interrupt, otherwise it triggers again
-right away. The timer interrupt can be cleared by writing 1 to the memory-
-mapped register at address `0xFF000200`.
+right away. The timer interrupt can be cleared by writing 1 to the
+memory-mapped register at address `0xFF000200`.
 
 The following program prints a message whenever a timer interrupt occurs:
 

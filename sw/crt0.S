@@ -71,7 +71,7 @@ exc_wrapper:
     sw a6, 16(sp)
     sw a7, 12(sp)
 
-    # save mpec, mie and mstatus:
+    # save mepc, mie and mstatus:
     csrr t0, mie
     csrr t1, mstatus
     csrr a1, mepc
@@ -79,13 +79,13 @@ exc_wrapper:
     sw t1, 4(sp)
     sw a1, 8(sp)
 
-    # call exception handler (a0 = mcause, a1 = mpec, a2 = mtval, a3 = fp)
+    # call exception handler (a0 = mcause, a1 = mepc, a2 = mtval, a3 = fp)
     csrr a0, mcause
     csrr a2, mtval
     lw a3, 72(sp)
     call exception_handler
 
-    # restore mpec, mie and mstatus (restoring mstatus disables interrupts):
+    # restore mepc, mie and mstatus (restoring mstatus disables interrupts):
     lw t0, 0(sp)
     lw t1, 4(sp)
     lw t2, 8(sp)

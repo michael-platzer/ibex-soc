@@ -2,7 +2,9 @@
 module ibex_soc
     #(
         parameter              RAM_FPATH  = "",
-        parameter int unsigned RAM_SIZE   = 262144
+        parameter int unsigned RAM_SIZE   = 262144,
+        parameter int unsigned PLL_MUL    = 10,
+        parameter int unsigned PLL_DIV    = 25
     )
     (
         input  sys_clk_i,
@@ -20,8 +22,8 @@ module ibex_soc
     logic clk_raw, pll_lock, pll_fb;
     PLLE2_BASE #(
         .CLKIN1_PERIOD  ( 10.0        ),
-        .CLKFBOUT_MULT  ( 10          ),
-        .CLKOUT0_DIVIDE ( 25          )
+        .CLKFBOUT_MULT  ( PLL_MUL     ),
+        .CLKOUT0_DIVIDE ( PLL_DIV     )
     ) pll_inst (
         .CLKIN1         ( sys_clk_i   ),
         .CLKOUT0        ( clk_raw     ),

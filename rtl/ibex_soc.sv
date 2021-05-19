@@ -76,43 +76,43 @@ module ibex_soc
     logic [31:0] hwreg_rdata;
 
     // Interrupts
-    logic irq_timer;
+    logic irq_timer, irq_uart_rx, irq_uart_tx;
 
     ibex_core #(
-        .DmHaltAddr             ( 32'h00000000       ),
-        .DmExceptionAddr        ( 32'h00000000       )
+        .DmHaltAddr             ( 32'h00000000                      ),
+        .DmExceptionAddr        ( 32'h00000000                      )
     ) u_core (
-        .clk_i                  ( clk                ),
-        .rst_ni                 ( rst_n              ),
-        .test_en_i              ( 1'b0               ),
-        .hart_id_i              ( 32'b0              ),
-        .boot_addr_i            ( 32'h00000000       ),
+        .clk_i                  ( clk                               ),
+        .rst_ni                 ( rst_n                             ),
+        .test_en_i              ( 1'b0                              ),
+        .hart_id_i              ( 32'b0                             ),
+        .boot_addr_i            ( 32'h00000000                      ),
 
-        .instr_req_o            ( instr_req          ),
-        .instr_gnt_i            ( instr_gnt          ),
-        .instr_rvalid_i         ( instr_rvalid       ),
-        .instr_addr_o           ( instr_addr         ),
-        .instr_rdata_i          ( instr_rdata        ),
-        .instr_err_i            ( instr_err          ),
+        .instr_req_o            ( instr_req                         ),
+        .instr_gnt_i            ( instr_gnt                         ),
+        .instr_rvalid_i         ( instr_rvalid                      ),
+        .instr_addr_o           ( instr_addr                        ),
+        .instr_rdata_i          ( instr_rdata                       ),
+        .instr_err_i            ( instr_err                         ),
 
-        .data_req_o             ( data_req           ),
-        .data_gnt_i             ( data_gnt           ),
-        .data_rvalid_i          ( data_rvalid        ),
-        .data_we_o              ( data_we            ),
-        .data_be_o              ( data_be            ),
-        .data_addr_o            ( data_addr          ),
-        .data_wdata_o           ( data_wdata         ),
-        .data_rdata_i           ( data_rdata         ),
-        .data_err_i             ( data_err           ),
+        .data_req_o             ( data_req                          ),
+        .data_gnt_i             ( data_gnt                          ),
+        .data_rvalid_i          ( data_rvalid                       ),
+        .data_we_o              ( data_we                           ),
+        .data_be_o              ( data_be                           ),
+        .data_addr_o            ( data_addr                         ),
+        .data_wdata_o           ( data_wdata                        ),
+        .data_rdata_i           ( data_rdata                        ),
+        .data_err_i             ( data_err                          ),
 
-        .irq_software_i         ( 1'b0               ),
-        .irq_timer_i            ( irq_timer          ),
-        .irq_external_i         ( 1'b0               ),
-        .irq_fast_i             ( 15'b0              ),
-        .irq_nm_i               ( 1'b0               ),
-        .debug_req_i            ( 1'b0               ),
-        .fetch_enable_i         ( 1'b1               ),
-        .core_sleep_o           (                    )
+        .irq_software_i         ( 1'b0                              ),
+        .irq_timer_i            ( irq_timer                         ),
+        .irq_external_i         ( 1'b0                              ),
+        .irq_fast_i             ( {13'b0, irq_uart_tx, irq_uart_rx} ),
+        .irq_nm_i               ( 1'b0                              ),
+        .debug_req_i            ( 1'b0                              ),
+        .fetch_enable_i         ( 1'b1                              ),
+        .core_sleep_o           (                                   )
     );
 
 
@@ -158,17 +158,19 @@ module ibex_soc
     );
 
     hwreg_iface hwregs (
-        .clk_i       ( clk                                       ),
-        .rst_ni      ( rst_n                                     ),
-        .req_i       ( data_req & (data_addr[31:16] == 16'hFF00) ),
-        .we_i        ( data_we                                   ),
-        .addr_i      ( data_addr[15:0]                           ),
-        .wdata_i     ( data_wdata                                ),
-        .rvalid_o    ( hwreg_rvalid                              ),
-        .rdata_o     ( hwreg_rdata                               ),
-        .irq_timer_o ( irq_timer                                 ),
-        .rx_i        ( uart_rx_i                                 ),
-        .tx_o        ( uart_tx_o                                 )
+        .clk_i         ( clk                                       ),
+        .rst_ni        ( rst_n                                     ),
+        .req_i         ( data_req & (data_addr[31:16] == 16'hFF00) ),
+        .we_i          ( data_we                                   ),
+        .addr_i        ( data_addr[15:0]                           ),
+        .wdata_i       ( data_wdata                                ),
+        .rvalid_o      ( hwreg_rvalid                              ),
+        .rdata_o       ( hwreg_rdata                               ),
+        .irq_timer_o   ( irq_timer                                 ),
+        .uart_rx_rdy_o ( irq_uart_rx                               ),
+        .uart_tx_rdy_o ( irq_uart_tx                               ),
+        .rx_i          ( uart_rx_i                                 ),
+        .tx_o          ( uart_tx_o                                 )
     );
 
 endmodule
@@ -188,6 +190,8 @@ module hwreg_iface #(
         output [31:0]   rdata_o,
 
         output          irq_timer_o,
+        output          uart_rx_rdy_o,
+        output          uart_tx_rdy_o,
 
         input           rx_i,
         output          tx_o
@@ -258,7 +262,9 @@ module hwreg_iface #(
     assign rdata_o  = rdata;
     assign rvalid_o = rvalid;
 
-    assign irq_timer_o = timer_irq;
+    assign irq_timer_o   = timer_irq;
+    assign uart_rx_rdy_o = uart_rvalid;
+    assign uart_tx_rdy_o = ~uart_wbusy;
 endmodule
 
 

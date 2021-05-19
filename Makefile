@@ -5,7 +5,6 @@ GEN_IBEX_TCL := gen_ibex.tcl
 
 # project target directory:
 PROJ_DIR ?= $(shell mktemp -d)
-RAM_FILE ?= '""'
 
 all:
 	cd $(PROJ_DIR) && vivado -mode batch -source $(abspath $(GEN_IBEX_TCL))   \

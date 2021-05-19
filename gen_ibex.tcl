@@ -2,15 +2,14 @@
 # Create Project
 ################################################################################
 
-if {$argc < 3} {
-    puts "usage: gen_ibex.tcl SOC-DIR IBEX-DIR RAM-FILE"
+if {$argc != 2 && $argc != 3} {
+    puts "usage: gen_ibex.tcl SOC-DIR IBEX-DIR [RAM-FILE]"
     exit 2
 }
 
 # get command line arguments:
 set soc_dir [lindex $argv 0]
 set ibex_dir [lindex $argv 1]
-set ram_file_var "RAM_FPATH=[lindex $argv 2]"
 
 # create project:
 set _xil_proj_name_ "IbexSoC"
@@ -80,5 +79,8 @@ set obj [get_filesets constrs_1]
 add_files -fileset $obj -norecurse "$soc_dir/nexysvideo.xdc"
 
 # set memory initialization files:
-set_property generic "$ram_file_var" -objects [get_filesets sources_1]
-set_property generic "$ram_file_var" -objects [get_filesets sim_1]
+if {$argc == 3} {
+    set ram_file_var "RAM_FPATH=[lindex $argv 2]"
+    set_property generic "$ram_file_var" -objects [get_filesets sources_1]
+    set_property generic "$ram_file_var" -objects [get_filesets sim_1]
+}
